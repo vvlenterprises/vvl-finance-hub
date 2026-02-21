@@ -93,6 +93,11 @@ export default function PaymentFormPage() {
     e.preventDefault();
     setErrors({});
 
+     if (!formData.amount || isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0) {
+    setErrors({ amount: 'Amount must be greater than 0' });
+    return;
+  }
+    
     const parsed = paymentSchema.safeParse({
       ...formData,
       amount: parseFloat(formData.amount),
@@ -125,10 +130,30 @@ export default function PaymentFormPage() {
       return;
     }
 
+    // 🚨 Prevent overpayment
+  if (formData.status === 'paid' && activeLoan) {
+    const enteredAmount = Math.round(parseFloat(formData.amount) * 100) / 100;
+    const outstanding = Number(activeLoan.outstanding_amount || 0);
+
+    console.log(enteredAmount);
+    console.log(outstanding);
+    console.log("validation" + enteredAmount > outstanding );
+    
+    if (enteredAmount > outstanding) {
+      toast({
+        variant: 'destructive',
+        title: 'Overpayment Not Allowed',
+        description: `Outstanding amount is ₹${outstanding.toLocaleString('en-IN')}. You cannot collect more than this.`,
+      });
+      return;
+    }
+  }
+ 
     setLoading(true);
 
     try {
-      await createPayment.mutateAsync({
+     // ✅ Save payment and capture result
+    const result =  await createPayment.mutateAsync({
         customer_id: formData.customer_id,
         loan_id: activeLoan.id,
         date: formData.date,
@@ -139,6 +164,55 @@ export default function PaymentFormPage() {
         promised_date: formData.promised_date || null,
       });
 
+      //Newly added for Fund Balance Update
+
+       if (formData.status === 'paid') {
+          const { error: fundError } = await supabase
+            .from('fund_transactions')
+            .insert({
+              amount: Math.round(parseFloat(formData.amount) * 100) / 100,
+              type: 'loan_repayment',
+              description: `Loan repayment from ${selectedCustomer?.name}`,
+              reference_table: 'payments',
+              reference_id: result?.id || null, // payment id
+              created_by: user!.id,
+            });
+      
+          if (fundError) {
+            toast({
+              variant: 'destructive',
+              title: 'Warning',
+              description: 'Payment saved but fund transaction failed.',
+            });
+          }
+      }
+
+
+          // 🔥 Update Loan Outstanding
+    if (formData.status === 'paid' && activeLoan) {
+      const paidAmount = Math.round(parseFloat(formData.amount) * 100) / 100;
+      const currentOutstanding = Number(activeLoan.outstanding_amount || 0);
+    
+      const newOutstanding = currentOutstanding - paidAmount;
+    
+      const { error: loanUpdateError } = await supabase
+        .from('loans')
+        .update({
+          outstanding_amount: newOutstanding <= 0 ? 0 : newOutstanding,
+          status: newOutstanding <= 0 ? 'closed' : 'active'
+        })
+        .eq('id', activeLoan.id);
+    
+      if (loanUpdateError) {
+        toast({
+          variant: 'destructive',
+          title: 'Loan Update Failed',
+          description: 'Payment saved but loan outstanding not updated.',
+        });
+      }
+    }
+      // Newly added ends.
+      
       toast({
         title: 'Payment Saved',
         description: 'Payment entry has been recorded successfully.',

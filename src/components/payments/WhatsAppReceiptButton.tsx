@@ -189,6 +189,8 @@ export function WhatsAppReceiptButton({ payment, agentName }: WhatsAppReceiptBut
 
   return (
     <div className="flex gap-1">
+    
+      {/*  
       <Button
         variant="ghost"
         size="icon"
@@ -201,17 +203,19 @@ export function WhatsAppReceiptButton({ payment, agentName }: WhatsAppReceiptBut
       >
         <MessageCircle className="w-4 h-4" />
       </Button>
+ */}
+      
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+        className="h-8 w-8 text-success hover:text-success hover:bg-success/10"
         onClick={(e) => {
           e.stopPropagation();
           handlePdfReceipt();
         }}
         title="Generate PDF receipt"
       >
-        <FileText className="w-4 h-4" />
+        <MessageCircle className="w-4 h-4" />
       </Button>
     </div>
   );
