@@ -626,10 +626,15 @@ export default function CustomerFormPage() {
                                         onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                                         className="touch-input"
                                     />
+                                    {formData.start_date && (
+                                        <p className="text-sm font-medium text-foreground">
+                                          {new Date(formData.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </p>
+                                    )}
                                     {errors.start_date && <p className="text-destructive text-sm">{errors.start_date}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Tenure To Date <span className="text-xs text-muted-foreground">(Auto-calculated)</span></Label>
+                                    <Label>To Date <span className="text-xs text-muted-foreground">(auto-calc)</span></Label>
                                     <Input
                                         type="date"
                                         value={formData.end_date}
@@ -637,6 +642,11 @@ export default function CustomerFormPage() {
                                         className="touch-input"
                                         min={formData.start_date}
                                     />
+                                    {formData.end_date && (
+                                        <p className="text-sm font-medium text-foreground">
+                                          {new Date(formData.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
