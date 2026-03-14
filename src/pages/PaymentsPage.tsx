@@ -42,7 +42,7 @@ export default function PaymentsPage() {
             <RecentPaymentsList
               payments={payments}
               isLoading={paymentsLoading}
-              limit={20}
+              limit={100}
             />
           </TabsContent>
         </Tabs>
