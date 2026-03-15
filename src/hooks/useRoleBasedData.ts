@@ -95,7 +95,6 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
         .from('loans')
         .select('disbursal_amount')
         .gte('start_date', range.from)
-        .lt('start_date', range.to)
         .eq('is_deleted', false);
 
       if (role !== 'admin' && customerIds.length > 0) {
