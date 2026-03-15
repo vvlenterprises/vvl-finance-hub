@@ -84,8 +84,7 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       let disbursalQuery = supabase
         .from('loans')
         .select('disbursal_amount')
-        .gte('start_date', range.from)
-        .lte('start_date', range.to)
+        .gt('start_date', range.from)
         .eq('is_deleted', false);
 
       if (role !== 'admin' && customerIds.length > 0) {
