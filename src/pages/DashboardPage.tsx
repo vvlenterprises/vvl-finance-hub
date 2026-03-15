@@ -15,7 +15,6 @@ function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  console.log(`${year}-${month}-${day}`);
   return `${year}-${month}-${day}`;
 }
 
@@ -108,6 +107,10 @@ export default function DashboardPage() {
             </Popover>
           </div>
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          Selected dates: {format(fromDate, "dd-MMM-yyyy")} to {format(toDate, "dd-MMM-yyyy")}
+        </p>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
