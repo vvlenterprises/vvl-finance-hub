@@ -14,21 +14,7 @@ function formatLocalDate(date: Date): string {
  * This ensures that timestamptz columns in the DB are compared correctly
  * against local calendar days, not UTC midnight.
  */
-function getLocalDateRange(fromDateStr: string, toDateStr: string) {
-  const [fy, fm, fd] = fromDateStr.split('-').map(Number);
-  const localDate = new Date(fy, fm - 1, fd);
-  const offset = localDate.getTimezoneOffset();
-  const sign = offset <= 0 ? '+' : '-';
-  const absOffset = Math.abs(offset);
-  const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, '0');
-  const offsetMins = String(absOffset % 60).padStart(2, '0');
-  const tzString = `${sign}${offsetHours}:${offsetMins}`;
 
-  return {
-    from: `${fromDateStr}T00:00:00${tzString}`,
-    to: `${toDateStr}T23:59:59.999${tzString}`,
-  };
-}
 
 /**
  * Role-based dashboard stats with date range support:
@@ -36,6 +22,22 @@ function getLocalDateRange(fromDateStr: string, toDateStr: string) {
  * Manager: self + agents reporting to manager
  * Agent: own data only
  */
+
+
+function getLocalDateRange(fromDateStr: string, toDateStr: string) {
+  const fromDate = new Date(fromDateStr);
+  const toDate = new Date(toDateStr);
+
+  // next day
+  const nextDay = new Date(toDate);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  return {
+    from: fromDate.toISOString(),
+    to: nextDay.toISOString(),
+  };
+}
+
 export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
   const { user, role } = useAuth();
 
@@ -93,7 +95,7 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
         .from('loans')
         .select('disbursal_amount')
         .gte('start_date', range.from)
-        .lte('start_date', range.to)
+        .lt('start_date', range.to)
         .eq('is_deleted', false);
 
       if (role !== 'admin' && customerIds.length > 0) {
