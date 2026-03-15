@@ -91,10 +91,18 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       const totalCollections = collectionPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
       // Get total disbursal (loans disbursed) in date range
+      //let disbursalQuery = supabase
+     //   .from('loans')
+      //  .select('disbursal_amount')
+     //   .gte('start_date', range.from)
+     //   .eq('is_deleted', false);
+
+            // Get collections (paid payments) in date range
       let disbursalQuery = supabase
         .from('loans')
         .select('disbursal_amount')
         .gte('start_date', range.from)
+        .lte('start_date', range.to) 
         .eq('is_deleted', false);
 
       if (role !== 'admin' && customerIds.length > 0) {
