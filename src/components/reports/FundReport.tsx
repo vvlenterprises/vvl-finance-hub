@@ -26,7 +26,7 @@ export function FundReport() {
   const isLoading = balanceLoading || txnLoading;
 
   const totalCredits = (transactions || [])
-    .filter((t) => t.type === 'credit' || t.type === 'collection')
+    .filter((t) => t.type === 'credit' || t.type === 'collection' || t.type === 'loan_repayment')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalDebits = (transactions || [])
@@ -161,7 +161,7 @@ export function FundReport() {
           </h3>
           <div className="space-y-2">
             {transactions.map((txn) => {
-              const isCredit = txn.type === 'credit' || txn.type === 'collection';
+              const isCredit = txn.type === 'credit' || txn.type === 'collection' || txn.type === 'loan_repayment';
               return (
                 <div
                   key={txn.id}

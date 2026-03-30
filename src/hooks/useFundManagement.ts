@@ -47,6 +47,25 @@ export function useFundTransactions(fromDate?: string, toDate?: string) {
 
   return useQuery({
     queryKey: ['fund-transactions', fromDate, toDate],
+    // queryFn: async () => {
+    //   let query = supabase
+    //     .from('fund_transactions')
+    //     .select('*')
+    //      .eq('is_deleted', false)
+    //     .eq('is_deleted', false)
+    //     .order('created_at', { ascending: false });
+
+    //   if (fromDate) {
+    //     query = query.gte('created_at', `${fromDate}T00:00:00`);
+    //   }
+    //   if (toDate) {
+    //     query = query.lte('created_at', `${toDate}T23:59:59`);
+    //   }
+
+    //   const { data, error } = await query;
+    //   if (error) throw error;
+    //   return (data || []) as FundTransaction[];
+    // },
     queryFn: async () => {
       let query = supabase
         .from('fund_transactions')
@@ -55,15 +74,43 @@ export function useFundTransactions(fromDate?: string, toDate?: string) {
         .order('created_at', { ascending: false });
 
       if (fromDate) {
-        query = query.gte('created_at', `${fromDate}T00:00:00`);
+        query = query.gt('created_at', `${fromDate}T00:00:00`);
       }
       if (toDate) {
-        query = query.lte('created_at', `${toDate}T23:59:59`);
+        query = query.lt('created_at', `${toDate}T23:59:59`);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as FundTransaction[];
+
+      const transactions = data || [];
+
+      // 👉 get all payment reference ids
+      const paymentIds = transactions
+        .filter(t => t.reference_table === 'payments')
+        .map(t => t.reference_id);
+
+      let paidPaymentIds: string[] = [];
+
+      if (paymentIds.length > 0) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('id')
+          .in('id', paymentIds)
+          .eq('status', 'paid');
+
+        paidPaymentIds = payments?.map(p => p.id) || [];
+      }
+
+      // 👉 final filter
+      const filtered = transactions.filter(t => {
+        if (t.reference_table === 'payments') {
+          return paidPaymentIds.includes(t.reference_id);
+        }
+        return true; // other tables allow
+      });
+
+      return filtered as FundTransaction[];
     },
     enabled: !!user,
   });

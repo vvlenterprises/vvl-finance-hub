@@ -19,8 +19,14 @@ function formatLocalDate(date: Date): string {
 }
 
 export default function DashboardPage() {
+  // const today = new Date();
+  // const [fromDate, setFromDate] = useState<Date>(today);
+
   const today = new Date();
-  const [fromDate, setFromDate] = useState<Date>(today);
+  // Month first date
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const [fromDate, setFromDate] = useState<Date>(firstDayOfMonth);
+  
   const [toDate, setToDate] = useState<Date>(today);
 
   const fromStr = formatLocalDate(fromDate);

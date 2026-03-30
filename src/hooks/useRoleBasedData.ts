@@ -64,12 +64,15 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
         return { totalCustomers: 0, totalCollections: 0, totalDisbursal: 0, pendingBalance: 0 };
       }
 
+      const toDate = new Date(range.to);
+       toDate.setDate(toDate.getDate() + 1);
+
       // Total collection (paid payments) in selected date range
       let collectionsQuery = supabase
         .from('payments')
         .select('amount')
-        .gte('date', range.from)
-        .lte('date', range.to)
+        .gte('created_at', range.from)
+        .lt('created_at', toDate.toISOString().split('T')[0])
         .eq('status', 'paid')
         .eq('is_deleted', false);
 
@@ -79,12 +82,13 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
 
       const { data: collectionPayments } = await collectionsQuery;
       const totalCollections = collectionPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-
+ 
       // Total disbursed (loan disbursal amount) in selected date range
       let disbursalQuery = supabase
         .from('loans')
         .select('disbursal_amount')
-        .gt('start_date', range.from)
+        .gte('created_at', range.from)
+        .lt('created_at', toDate.toISOString().split('T')[0])
         .eq('is_deleted', false);
 
       if (role !== 'admin' && customerIds.length > 0) {
