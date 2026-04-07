@@ -61,6 +61,13 @@ export default function PaymentFormPage() {
 
 
   const [customerOpen, setCustomerOpen] = useState(false);
+
+  const getLocalDate = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState<{
     customer_id: string;
     date: string;
@@ -71,7 +78,8 @@ export default function PaymentFormPage() {
     promised_date: string;
   }>({
     customer_id: preselectedCustomer || '',
-    date: new Date().toISOString().split('T')[0],
+    //date: new Date().toISOString().split('T')[0],
+    date: getLocalDate(), 
     amount: '',
     mode: 'cash',
     status: 'paid',
@@ -352,7 +360,7 @@ export default function PaymentFormPage() {
               {errors.date && <p className="text-destructive text-sm">{errors.date}</p>}
             </div>
 
-            <>
+            {/* <>
               <p>
                 📱 Device:{" "}
                 {new Date().toLocaleString("en-IN", {
@@ -368,7 +376,7 @@ export default function PaymentFormPage() {
                   })}
                 </p>
               )}
-            </>
+            </> */}
 
             <div className="space-y-2">
               <Label>Amount (₹)</Label>
