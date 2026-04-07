@@ -1,7 +1,9 @@
 @REM @echo off
 @REM set PGPASSWORD=Admin@2026$$
 @REM set PGSSLMODE=require
-@REM pg_dump -h db.fbgqfziabostkpzlsuoz.supabase.co -U postgres -d postgres -f backup.sql
+
+@REM pg_dump -h aws-0-ap-south-1.pooler.supabase.com -p 6543 -U postgres.fbgqfziabostkpzlsuoz -d postgres -f %backupfile%
+
 
 @REM git add backup.sql
 @REM git commit -m "Daily Supabase backup"
@@ -41,7 +43,8 @@ set PGSSLMODE=require
 set backupfile=backup\backup_%timestamp%.sql
 
 :: Run backup
-pg_dump -h db.fbgqfziabostkpzlsuoz.supabase.co -U postgres -d postgres -f %backupfile%
+:: pg_dump -h db.fbgqfziabostkpzlsuoz.supabase.co -U postgres -d postgres -f %backupfile%
+pg_dump -h aws-0-ap-south-1.pooler.supabase.com -p 6543 -U postgres.fbgqfziabostkpzlsuoz -d postgres -f %backupfile%
 
 :: Git push
 git add .
