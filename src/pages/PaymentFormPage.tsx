@@ -37,6 +37,7 @@ const paymentSchema = z.object({
   promised_date: z.string().optional(),
 });
 
+
 export default function PaymentFormPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -46,6 +47,18 @@ export default function PaymentFormPage() {
 
   const { data: customers } = useCustomers();
   const createPayment = useCreatePayment();
+
+   const [internetTime, setInternetTime] = useState("");
+
+   useEffect(() => {
+    fetch("https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata")
+      .then(res => res.json())
+      .then(data => setInternetTime(data.dateTime))
+      .catch(() => {});
+  }, []);
+
+  
+
 
   const [customerOpen, setCustomerOpen] = useState(false);
   const [formData, setFormData] = useState<{
@@ -338,6 +351,24 @@ export default function PaymentFormPage() {
               )}
               {errors.date && <p className="text-destructive text-sm">{errors.date}</p>}
             </div>
+
+            <>
+              <p>
+                📱 Device:{" "}
+                {new Date().toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                })}
+              </p> 
+
+              {internetTime && (
+                <p>
+                  🌐 Internet:{" "}
+                  {new Date(internetTime).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                  })}
+                </p>
+              )}
+            </>
 
             <div className="space-y-2">
               <Label>Amount (₹)</Label>
