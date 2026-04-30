@@ -227,7 +227,7 @@ export default function CustomerDetailPage() {
     const charges = getLoanChargesBreakdown(loan);
     const disbursalAmt = Number(loan.disbursal_amount);
     const outstandingAmt = Number(loan.outstanding_amount);
-
+    const paidAmt = Number(loan.loan_amount - outstandingAmt);
     //**************
     const daily = +loan.daily_amount || 1;
     const paidDays = Math.floor((+loan.loan_amount - +loan.outstanding_amount) / daily);
@@ -252,7 +252,7 @@ export default function CustomerDetailPage() {
           <div><p className="text-muted-foreground">Total Charges</p><p className="font-semibold text-destructive">₹{charges.totalCharges.toLocaleString('en-IN')}</p></div>
           <div><p className="text-muted-foreground">Net Disbursal</p><p className="font-semibold text-primary">₹{disbursalAmt.toLocaleString('en-IN')}</p></div> 
           <div><p className="text-muted-foreground">Daily Amount</p><p className="font-semibold">₹{Number(loan.daily_amount).toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Paid Dues</p><p className="font-semibold">{paidDays} days ( <span className="font-semibold text-success">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
+          <div><p className="text-muted-foreground">Paid Dues</p><p className="font-semibold">{paidDays} days ( <span className="font-semibold text-success">₹{paidAmt.toLocaleString('en-IN')}</span> )</p></div>
           <div><p className="text-muted-foreground">Pending Dues</p><p className="font-semibold">{pendingDays} days ( <span className="font-semibold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
         </div>
           <div className="text-xs">
