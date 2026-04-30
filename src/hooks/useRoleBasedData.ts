@@ -68,22 +68,34 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       const toDate = new Date(range.to);
        toDate.setDate(toDate.getDate() + 1);
 
-      // Total collection (paid payments) in selected date range
-      let collectionsQuery = supabase
-        .from('payments')
-        .select('amount')
-        .gte('date', range.from)
-        .lt('date', toDate.toISOString().split('T')[0])
-        .eq('status', 'paid')
-        .eq('is_deleted', false);
+      // // Total collection (paid payments) in selected date range
+      // let collectionsQuery = supabase
+      //   .from('payments')
+      //   .select('amount')
+      //   .gte('date', range.from)
+      //   .lt('date', toDate.toISOString().split('T')[0])
+      //   .eq('status', 'paid')
+      //   .eq('is_deleted', false);
 
-      if (role !== 'admin' && customerIds.length > 0) {
-        collectionsQuery = collectionsQuery.in('customer_id', customerIds);
-      }
+      // if (role !== 'admin' && customerIds.length > 0) {
+      //   collectionsQuery = collectionsQuery.in('customer_id', customerIds);
+      // }
 
-      const { data: collectionPayments } = await collectionsQuery;
-      const totalCollections = collectionPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      // const { data: collectionPayments } = await collectionsQuery;
+      // console.log('Collection payments count:', collectionPayments?.length || 0);
+      // const totalCollections = collectionPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
  
+
+      const { data } = await supabase.rpc('get_daily_collections', {
+  from_date: range.from,
+  to_date: range.to,
+      customer_ids: customerIds ?? null
+
+});
+
+const totalCollections =
+  data?.reduce((sum, d) => sum + Number(d.total), 0) || 0;
+
       // Total disbursed (loan disbursal amount) in selected date range
       let disbursalQuery = supabase
         .from('loans')
@@ -95,6 +107,7 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       if (role !== 'admin' && customerIds.length > 0) {
         disbursalQuery = disbursalQuery.in('customer_id', customerIds);
       }
+      
 
       const { data: loans } = await disbursalQuery;
       const totalDisbursal = loans?.reduce((sum, l) => sum + Number(l.disbursal_amount), 0) || 0;
@@ -193,18 +206,16 @@ export function useRoleBasedDailyCollections(fromDate?: string, toDate?: string)
       // }
 
       // const { data } = await query;
-
-    // const { data } = await supabase.rpc("get_daily_collections", {
-    //   from_date: range.from,
-    //   to_date: toDate.toISOString().split('T')[0]
-    // });
+ 
 
     const { data } = await supabase.rpc('get_daily_collections', {
   from_date: from,
-  to_date: to
+  to_date: to,
+    customer_ids: customerIds ?? null
+
 });
 
-    console.log(data.length);
+    console.log(data);
       // return days.map((date) => {
       //   const dayPayments = data?.filter((p) => p.date === date) || [];
       //   const total = dayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
