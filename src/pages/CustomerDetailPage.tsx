@@ -44,6 +44,9 @@ export default function CustomerDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
 
+
+
+
   // Fetch ALL loans for this customer
   const { data: allLoans } = useQuery({
     queryKey: ['all-loans', id],
@@ -225,6 +228,13 @@ export default function CustomerDetailPage() {
     const disbursalAmt = Number(loan.disbursal_amount);
     const outstandingAmt = Number(loan.outstanding_amount);
 
+    //**************
+    const daily = +loan.daily_amount || 1;
+    const paidDays = Math.floor((+loan.loan_amount - +loan.outstanding_amount) / daily);
+    const pendingDays = Math.ceil(+loan.outstanding_amount / daily);
+    const totalDays = Math.ceil((new Date(loan.end_date || Date.now()).getTime() - new Date(loan.start_date).getTime()) / 86400000) + 1;
+    //**************/
+
     return (
       <div key={loan.id} className={cn('p-4 rounded-xl border', isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30')}>
         <div className="flex items-center justify-between mb-3">
@@ -240,14 +250,21 @@ export default function CustomerDetailPage() {
         <div className="grid grid-cols-2 gap-2 text-xs mb-2">
           <div><p className="text-muted-foreground">Gross Loan</p><p className="font-semibold">₹{Number(loan.loan_amount).toLocaleString('en-IN')}</p></div>
           <div><p className="text-muted-foreground">Total Charges</p><p className="font-semibold text-destructive">₹{charges.totalCharges.toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Net Disbursal</p><p className="font-semibold text-success">₹{disbursalAmt.toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Outstanding</p><p className="font-semibold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Daily</p><p className="font-semibold">₹{Number(loan.daily_amount).toLocaleString('en-IN')}</p></div>
-          <div>
-            <p className="text-muted-foreground">Tenure</p>
-            <p className="font-semibold">{new Date(loan.start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} – {loan.end_date ? new Date(loan.end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Ongoing'}</p>
-          </div>
+          <div><p className="text-muted-foreground">Net Disbursal</p><p className="font-semibold text-primary">₹{disbursalAmt.toLocaleString('en-IN')}</p></div> 
+          <div><p className="text-muted-foreground">Daily Amount</p><p className="font-semibold">₹{Number(loan.daily_amount).toLocaleString('en-IN')}</p></div>
+          <div><p className="text-muted-foreground">Paid Dues</p><p className="font-semibold">{paidDays} days ( <span className="font-semibold text-success">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
+          <div><p className="text-muted-foreground">Pending Dues</p><p className="font-semibold">{pendingDays} days ( <span className="font-semibold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
         </div>
+          <div className="text-xs">
+            <p className="text-muted-foreground">Tenure</p>
+            <p className="font-semibold whitespace-pre">
+              {new Date(loan.start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} {" - "} 
+              {loan.end_date
+                ? new Date(loan.end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                : 'Ongoing'} ({totalDays} days)
+                
+            </p> 
+          </div> 
 
         {charges.totalCharges > 0 && (
           <div className="text-xs border-t border-border pt-2 mt-2 space-y-1 text-muted-foreground">

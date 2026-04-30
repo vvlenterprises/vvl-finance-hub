@@ -71,8 +71,8 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       let collectionsQuery = supabase
         .from('payments')
         .select('amount')
-        .gte('created_at', range.from)
-        .lt('created_at', toDate.toISOString().split('T')[0])
+        .gte('date', range.from)
+        .lt('date', toDate.toISOString().split('T')[0])
         .eq('status', 'paid')
         .eq('is_deleted', false);
 
@@ -176,11 +176,15 @@ export function useRoleBasedDailyCollections(fromDate?: string, toDate?: string)
 
       const range = getLocalDateRange(from, to);
 
+      const toDate = new Date(range.to);
+       toDate.setDate(toDate.getDate() + 1);
+
       let query = supabase
         .from('payments')
         .select('date, amount')
         .gte('date', range.from)
-        .lte('date', range.to)
+        //.lte('date', range.to)
+        .lt('date', toDate.toISOString().split('T')[0])
         .eq('status', 'paid')
         .eq('is_deleted', false);
 
