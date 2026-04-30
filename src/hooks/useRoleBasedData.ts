@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Database } from "@/integrations/supabase/types";
 
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
@@ -179,31 +180,52 @@ export function useRoleBasedDailyCollections(fromDate?: string, toDate?: string)
       const toDate = new Date(range.to);
        toDate.setDate(toDate.getDate() + 1);
 
-      let query = supabase
-        .from('payments')
-        .select('date, amount')
-        .gte('date', range.from)
-        //.lte('date', range.to)
-        .lt('date', toDate.toISOString().split('T')[0])
-        .eq('status', 'paid')
-        .eq('is_deleted', false);
+      // let query = supabase
+      //   .from('payments')
+      //   .select('date, amount')
+      //   .gte('date', range.from) 
+      //   .lt('date', toDate.toISOString().split('T')[0])
+      //   .eq('status', 'paid')
+      //   .eq('is_deleted', false);
 
-      if (customerIds) {
-        query = query.in('customer_id', customerIds);
-      }
+      // if (customerIds) {
+      //   query = query.in('customer_id', customerIds);
+      // }
 
-      const { data } = await query;
+      // const { data } = await query;
+
+    // const { data } = await supabase.rpc("get_daily_collections", {
+    //   from_date: range.from,
+    //   to_date: toDate.toISOString().split('T')[0]
+    // });
+
+    const { data } = await supabase.rpc('get_daily_collections', {
+  from_date: from,
+  to_date: to
+});
+
+    console.log(data.length);
+      // return days.map((date) => {
+      //   const dayPayments = data?.filter((p) => p.date === date) || [];
+      //   const total = dayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+      //   const [y, m, d] = date.split('-').map(Number);
+      //   const dateObj = new Date(y, m - 1, d);
+      //   return {
+      //     date: days.length <= 7
+      //       ? dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+      //       : dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+      //     amount: total,
+      //   };
+      // });
 
       return days.map((date) => {
-        const dayPayments = data?.filter((p) => p.date === date) || [];
-        const total = dayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-        const [y, m, d] = date.split('-').map(Number);
-        const dateObj = new Date(y, m - 1, d);
+        const match = data?.find(d => d.date === date);
+
         return {
           date: days.length <= 7
-            ? dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
-            : dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
-          amount: total,
+            ? new Date(date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+            : new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+          amount: Number(match?.total || 0)
         };
       });
     },
