@@ -4,7 +4,7 @@ import { MainLayout } from '@/components/MainLayout';
 import { useCustomerWithBalance, useCustomerPayments, useDeleteCustomer, useUpdatePayment, Payment } from '@/hooks/useData';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissionChecker } from '@/hooks/usePermissions';
-import { ArrowLeft, Phone, MapPin, Calendar, Edit, Trash2, Plus, Check, Loader2, Lock, FileText, User, PlusCircle, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Calendar, Edit, Trash2, Plus, Check, Loader2, Lock, FileText, User, PlusCircle, MessageCircle, Copy, Wallet, Download, Receipt, CalendarDays, CalendarCheck, Clock, Hourglass, Percent } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { WhatsAppLoanShareButton } from '@/components/payments/WhatsAppLoanShareButton';
+import { LoanCardRedesigned } from '@/components/LoanCardRedesigned';
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -224,173 +225,70 @@ export default function CustomerDetailPage() {
 
   const renderLoanCard = (loan: any) => {
     const isActive = loan.status === 'active';
-    const charges = getLoanChargesBreakdown(loan);
-    const disbursalAmt = Number(loan.disbursal_amount);
     const outstandingAmt = Number(loan.outstanding_amount);
-    const paidAmt = Number(loan.loan_amount - outstandingAmt);
-    //**************
-    const daily = +loan.daily_amount || 1;
-    const paidDays = Math.floor((+loan.loan_amount - +loan.outstanding_amount) / daily);
-    const pendingDays = Math.ceil(+loan.outstanding_amount / daily);
-    const totalDays = Math.ceil((new Date(loan.end_date || Date.now()).getTime() - new Date(loan.start_date).getTime()) / 86400000) + 1;
-    //**************/
 
+    const renderWhatsApp = (loan: any) => (
+      <WhatsAppLoanShareButton data={{
+        customerName: customer.name,
+        mobile: customer.mobile,
+        loanDisplayId: loan.loan_display_id || `Loan #${loan.loan_number}`,
+        loanAmount: Number(loan.loan_amount),
+        interestRate: Number(loan.interest_rate) || 0,
+        processingFeeRate: Number(loan.processing_fee_rate) || 0,
+        otherDeductions: Number(loan.other_deductions) || 0,
+        includeChargesInOutstanding: loan.include_charges_in_outstanding || false,
+        disbursalAmount: Number(loan.disbursal_amount),
+        outstandingAmount: outstandingAmt,
+        dailyAmount: Number(loan.daily_amount),
+        startDate: loan.start_date,
+        endDate: loan.end_date,
+      }} />
+    );
 
-const today = Date.now();
-const start = new Date(loan.start_date).getTime();
-const end = new Date(loan.end_date || today).getTime();
-
-const totalDayss = Math.ceil((end - start) / 86400000) + 1;
-const actualDays = Math.min(totalDayss, Math.max(0, Math.ceil((today - start) / 86400000) + 1));
-
-const actualDuesAmt = (loan.loan_amount / totalDayss) * actualDays;
-
-      ///**************** */
-
+    const renderCloseLoanDialog = (loan: any, outstanding: number) => {
+      if (!(isActive && outstanding.toLocaleString('en-IN') === "0" && (isAdmin || isManager))) return null;
+      return (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full mt-2 border-warning text-warning hover:bg-warning/10" disabled={closingLoan}>
+              <Lock className="w-3 h-3 mr-1" /> Close Loan
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Close Loan</AlertDialogTitle>
+              <AlertDialogDescription>
+                The system will verify that total collected amount equals or exceeds the outstanding amount before closing.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction className="bg-warning text-warning-foreground hover:bg-warning/90" onClick={() => handleCloseLoan(loan)}>
+                Confirm Close
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    };
 
     return (
-      <div key={loan.id} className={cn('p-4 rounded-xl border', isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30')}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Loan / Agreement ID</p>
-            <p className="font-bold text-primary tracking-wider text-sm">{loan.loan_display_id || `Loan #${loan.loan_number}`}</p>
-          </div>
-          <Badge variant={isActive ? 'default' : 'secondary'} className={isActive ? 'bg-success text-success-foreground' : ''}>
-            {loan.status}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-          <div><p className="text-muted-foreground">Gross Loan</p><p className="font-semibold">₹{Number(loan.loan_amount).toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Total Charges</p><p className="font-semibold text-destructive">₹{charges.totalCharges.toLocaleString('en-IN')}</p></div>
-          <div><p className="text-muted-foreground">Net Disbursal</p><p className="font-semibold text-primary">₹{disbursalAmt.toLocaleString('en-IN')}</p></div> 
-          <div><p className="text-muted-foreground">Daily Amount</p><p className="font-semibold">₹{Number(loan.daily_amount).toLocaleString('en-IN')}</p></div>
-          <div>
-            <p className="text-muted-foreground">Actual Dues</p>
-            <p className="font-semibold">
-              {actualDays} days
-              ( <span className="font-semibold text-primary">₹{actualDuesAmt.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span> )
-            </p>
-          </div>
-          <div><p className="text-muted-foreground">Paid Dues</p><p className="font-semibold">{paidDays} days ( <span className="font-semibold text-success">₹{paidAmt.toLocaleString('en-IN')}</span> )</p></div>
-          <div><p className="text-muted-foreground">Pending Dues</p><p className="font-semibold">{pendingDays} days ( <span className="font-semibold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
-        
-
-        </div>
-          <div className="text-xs">
-            <p className="text-muted-foreground">Tenure</p>
-            <p className="font-semibold whitespace-pre">
-              {new Date(loan.start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} {" - "} 
-              {loan.end_date
-                ? new Date(loan.end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                : 'Ongoing'} ({totalDays} days)
-                
-            </p> 
-          </div> 
-
-        {charges.totalCharges > 0 && (
-          <div className="text-xs border-t border-border pt-2 mt-2 space-y-1 text-muted-foreground">
-            {charges.interestAmt > 0 && <p>Interest ({loan.interest_rate}%): ₹{charges.interestAmt.toLocaleString('en-IN')}</p>}
-            {charges.processingAmt > 0 && <p>Processing ({loan.processing_fee_rate}%): ₹{charges.processingAmt.toLocaleString('en-IN')}</p>}
-            {charges.otherDed > 0 && <p>Other: ₹{charges.otherDed.toLocaleString('en-IN')} {loan.other_deduction_remarks ? `(${loan.other_deduction_remarks})` : ''}</p>}
-            <p className="text-xs italic">{loan.include_charges_in_outstanding ? 'Charges included in outstanding' : 'Charges deducted from disbursal'}</p>
-          </div>
-        )}
-
-        <div className="flex gap-2 mt-3">
-          {/* View Ledger */}
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedLoanId(selectedLoanId === loan.id ? null : loan.id)}>
-            <FileText className="w-3 h-3 mr-1" /> {selectedLoanId === loan.id ? 'Hide Ledger' : 'View Ledger'}
-          </Button>
-
-          {/* WhatsApp Share */}
-          <WhatsAppLoanShareButton data={{
-            customerName: customer.name,
-            mobile: customer.mobile,
-            loanDisplayId: loan.loan_display_id || `Loan #${loan.loan_number}`,
-            loanAmount: Number(loan.loan_amount),
-            interestRate: Number(loan.interest_rate) || 0,
-            processingFeeRate: Number(loan.processing_fee_rate) || 0,
-            otherDeductions: Number(loan.other_deductions) || 0,
-            includeChargesInOutstanding: loan.include_charges_in_outstanding || false,
-            disbursalAmount: disbursalAmt,
-            outstandingAmount: outstandingAmt,
-            dailyAmount: Number(loan.daily_amount),
-            startDate: loan.start_date,
-            endDate: loan.end_date,
-          }} />
-        </div>
-
-        {/* Close Loan button */}
-        {isActive && outstandingAmt.toLocaleString('en-IN') ==="0" && (isAdmin || isManager) && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full mt-2 border-warning text-warning hover:bg-warning/10" disabled={closingLoan}>
-                <Lock className="w-3 h-3 mr-1" /> Close Loan
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Close Loan</AlertDialogTitle>
-                <AlertDialogDescription>
-                  The system will verify that total collected amount equals or exceeds the outstanding amount before closing.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction className="bg-warning text-warning-foreground hover:bg-warning/90" onClick={() => handleCloseLoan(loan)}>
-                  Confirm Close
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-
-        {/* Inline Ledger */}
-        {selectedLoanId === loan.id && (
-          <div className="mt-3 border-t border-border pt-3">
-            <h4 className="text-sm font-semibold mb-2">Payment Ledger</h4>
-            {!loanPayments?.length ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No payments for this loan</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 px-1 font-medium text-muted-foreground">Date</th>
-                      <th className="text-right py-2 px-1 font-medium text-muted-foreground">Amt</th>
-                      <th className="text-center py-2 px-1 font-medium text-muted-foreground">Mode</th>
-                      <th className="text-center py-2 px-1 font-medium text-muted-foreground">Status</th>
-                      <th className="text-center py-2 px-1 font-medium text-muted-foreground">Edit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loanPayments.map((p: any) => (
-                      <tr key={p.id} className="border-b border-border last:border-0">
-                        <td className="py-2 px-1">{new Date(p.date).toLocaleDateString('en-IN')}</td>
-                        <td className="py-2 px-1 text-right font-medium">₹{Number(p.amount).toLocaleString('en-IN')}</td>
-                        <td className="py-2 px-1 text-center capitalize">{p.mode}</td>
-                        <td className="py-2 px-1 text-center">
-                          <span className={cn('status-badge text-[10px]', p.status === 'paid' && 'status-paid', p.status === 'not_paid' && 'status-not-paid')}>
-                            {p.status === 'paid' ? 'Paid' : 'Not Paid'}
-                          </span>
-                        </td>
-                        <td className="py-2 px-1 text-center">
-                          {canEditPayment(p) ? (
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditPayment(p)}>
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                          ) : <span className="text-muted-foreground">—</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <LoanCardRedesigned
+        key={loan.id}
+        loan={loan}
+        customer={customer}
+        isAdmin={isAdmin}
+        isManager={isManager}
+        closingLoan={closingLoan}
+        selectedLoanId={selectedLoanId}
+        loanPayments={loanPayments}
+        onSelectLoan={setSelectedLoanId}
+        onCloseLoan={handleCloseLoan}
+        canEditPayment={canEditPayment}
+        openEditPayment={openEditPayment}
+        renderWhatsApp={renderWhatsApp}
+        renderCloseLoanDialog={renderCloseLoanDialog}
+      />
     );
   };
 
