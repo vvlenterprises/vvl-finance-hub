@@ -235,6 +235,19 @@ export default function CustomerDetailPage() {
     const totalDays = Math.ceil((new Date(loan.end_date || Date.now()).getTime() - new Date(loan.start_date).getTime()) / 86400000) + 1;
     //**************/
 
+
+const today = Date.now();
+const start = new Date(loan.start_date).getTime();
+const end = new Date(loan.end_date || today).getTime();
+
+const totalDayss = Math.ceil((end - start) / 86400000) + 1;
+const actualDays = Math.min(totalDayss, Math.max(0, Math.ceil((today - start) / 86400000) + 1));
+
+const actualDuesAmt = (loan.loan_amount / totalDayss) * actualDays;
+
+      ///**************** */
+
+
     return (
       <div key={loan.id} className={cn('p-4 rounded-xl border', isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30')}>
         <div className="flex items-center justify-between mb-3">
@@ -252,8 +265,17 @@ export default function CustomerDetailPage() {
           <div><p className="text-muted-foreground">Total Charges</p><p className="font-semibold text-destructive">₹{charges.totalCharges.toLocaleString('en-IN')}</p></div>
           <div><p className="text-muted-foreground">Net Disbursal</p><p className="font-semibold text-primary">₹{disbursalAmt.toLocaleString('en-IN')}</p></div> 
           <div><p className="text-muted-foreground">Daily Amount</p><p className="font-semibold">₹{Number(loan.daily_amount).toLocaleString('en-IN')}</p></div>
+          <div>
+            <p className="text-muted-foreground">Actual Dues</p>
+            <p className="font-semibold">
+              {actualDays} days
+              ( <span className="font-semibold text-primary">₹{actualDuesAmt.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span> )
+            </p>
+          </div>
           <div><p className="text-muted-foreground">Paid Dues</p><p className="font-semibold">{paidDays} days ( <span className="font-semibold text-success">₹{paidAmt.toLocaleString('en-IN')}</span> )</p></div>
           <div><p className="text-muted-foreground">Pending Dues</p><p className="font-semibold">{pendingDays} days ( <span className="font-semibold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</span> )</p></div>
+        
+
         </div>
           <div className="text-xs">
             <p className="text-muted-foreground">Tenure</p>
