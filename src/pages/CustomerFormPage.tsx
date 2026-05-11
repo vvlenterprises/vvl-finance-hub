@@ -122,13 +122,31 @@ export default function CustomerFormPage() {
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
             if (diffDays > 0) {
                 const loanAmt = parseFloat(formData.loan_amount) || 0;
-                const daily = Math.round((loanAmt / diffDays) * 100) / 100;
+                const interestRate = parseFloat(formData.interest_rate) || 0;
+                const processingRate = parseFloat(formData.processing_fee_rate) || 0;
+                const otherDed = parseFloat(formData.other_deductions) || 0;
+
+                const interestAmt = Math.round(loanAmt * interestRate / 100);
+                const processingAmt = Math.round(loanAmt * processingRate / 100);
+                const totalCharges = interestAmt + processingAmt + otherDed;
+                
+                const outstandingAmount = formData.include_charges_in_outstanding ? loanAmt + totalCharges : loanAmt;
+                const daily = Math.round((outstandingAmount / diffDays) * 100) / 100;
+
                 if (daily > 0) {
                     setFormData(prev => ({ ...prev, daily_amount: daily.toString() }));
                 }
             }
         }
-    }, [formData.loan_amount, formData.start_date, formData.end_date]);
+    }, [
+        formData.loan_amount, 
+        formData.start_date, 
+        formData.end_date, 
+        formData.interest_rate, 
+        formData.processing_fee_rate, 
+        formData.other_deductions, 
+        formData.include_charges_in_outstanding
+    ]);
 
     const [errors, setErrors] = useState < Record < string, string>> ({});
     const [loading, setLoading] = useState(false);
@@ -136,6 +154,7 @@ export default function CustomerFormPage() {
     // Update form when existing customer loads
     useEffect(() => {
         if (existingCustomer) {
+            const activeLoan = (existingCustomer as any).active_loan;
             setFormData({
                 name: existingCustomer.name,
                 mobile: existingCustomer.mobile,
@@ -156,11 +175,11 @@ export default function CustomerFormPage() {
                 aadhaar_file_url: (existingCustomer as any).aadhaar_file_url || '',
                 other_file_url: '',
                 other_file_name: '',
-                interest_rate: '4.5',
-                processing_fee_rate: '2.5',
-                other_deductions: '',
-                other_deduction_remarks: '',
-                include_charges_in_outstanding: false,
+                interest_rate: activeLoan?.interest_rate?.toString() || '12.5',
+                processing_fee_rate: activeLoan?.processing_fee_rate?.toString() || '2.5',
+                other_deductions: activeLoan?.other_deductions?.toString() || '',
+                other_deduction_remarks: activeLoan?.other_deduction_remarks || '',
+                include_charges_in_outstanding: activeLoan?.include_charges_in_outstanding || false,
             });
         }
     }, [existingCustomer, user?.id]);
@@ -227,9 +246,60 @@ export default function CustomerFormPage() {
                 };
 
                 await updateCustomer.mutateAsync({ id, ...customerData });
+
+                // Also update the active loan if it exists
+                const activeLoan = (existingCustomer as any).active_loan;
+                if (activeLoan) {
+                    const interestRate = parseFloat(formData.interest_rate) || activeLoan.interest_rate || 0;
+                    const processingRate = parseFloat(formData.processing_fee_rate) || activeLoan.processing_fee_rate || 0;
+                    const otherDed = parseFloat(formData.other_deductions) || activeLoan.other_deductions || 0;
+                    
+                    const interestAmt = Math.round(loanAmount * interestRate / 100);
+                    const processingAmt = Math.round(loanAmount * processingRate / 100);
+                    const totalCharges = interestAmt + processingAmt + otherDed;
+                    
+                    const disbursalAmount = formData.include_charges_in_outstanding ? loanAmount : loanAmount - totalCharges;
+                    const outstandingAmount = formData.include_charges_in_outstanding ? loanAmount + totalCharges : loanAmount;
+
+                    const { error: loanUpdateError } = await supabase
+                        .from('loans')
+                        .update({
+                            loan_amount: loanAmount,
+                            daily_amount: dailyAmount,
+                            start_date: formData.start_date,
+                            end_date: formData.end_date || null,
+                            status: formData.status,
+                            interest_rate: interestRate,
+                            processing_fee_rate: processingRate,
+                            other_deductions: otherDed,
+                            other_deduction_remarks: formData.other_deduction_remarks || null,
+                            include_charges_in_outstanding: formData.include_charges_in_outstanding,
+                            disbursal_amount: disbursalAmount,
+                            outstanding_amount: outstandingAmount,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', activeLoan.id);
+
+                    if (loanUpdateError) {
+                        console.error('Loan update error:', loanUpdateError);
+                    }
+
+                    // Update fund transaction if disbursal amount changed
+                    if (disbursalAmount !== activeLoan.disbursal_amount) {
+                        await supabase
+                            .from('fund_transactions')
+                            .update({
+                                amount: disbursalAmount,
+                                description: `Loan disbursed to ${formData.name} (Updated)`,
+                            })
+                            .eq('reference_id', id)
+                            .eq('type', 'loan_disbursement');
+                    }
+                }
+
                 toast({
                     title: 'Customer Updated',
-                    description: 'Customer details have been updated successfully.',
+                    description: 'Customer and loan details have been updated successfully.',
                 });
             } else {
                 // NEW CUSTOMER FLOW: Check if mobile already exists

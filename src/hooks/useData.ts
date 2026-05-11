@@ -213,18 +213,28 @@ export function useDashboardStats() {
 
       const monthlyCollection = monthPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-      // Get pending balance
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('loan_amount');
+      // Get pending balance - accurate calculation from active loans
+      const { data: activeLoans } = await supabase
+        .from('loans')
+        .select('id, loan_amount')
+        .eq('status', 'active')
+        .eq('is_deleted', false);
 
-      const { data: allPaidPayments } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'paid');
+      const activeLoanIds = activeLoans?.map(l => l.id) || [];
+      
+      let totalPaid = 0;
+      if (activeLoanIds.length > 0) {
+        const { data: activePayments } = await supabase
+          .from('payments')
+          .select('amount')
+          .in('loan_id', activeLoanIds)
+          .eq('status', 'paid')
+          .eq('is_deleted', false);
+        
+        totalPaid = activePayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      }
 
-      const totalLoans = customers?.reduce((sum, c) => sum + Number(c.loan_amount), 0) || 0;
-      const totalPaid = allPaidPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const totalLoans = activeLoans?.reduce((sum, l) => sum + Number(l.loan_amount), 0) || 0;
       const pendingBalance = totalLoans - totalPaid;
 
       return {
@@ -278,17 +288,27 @@ export function usePaymentStatusBreakdown() {
   return useQuery({
     queryKey: ['payment-status', user?.id],
     queryFn: async () => {
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('loan_amount');
+      const { data: activeLoans } = await supabase
+        .from('loans')
+        .select('id, loan_amount')
+        .eq('status', 'active')
+        .eq('is_deleted', false);
 
-      const { data: paidPayments } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'paid');
+      const activeLoanIds = activeLoans?.map(l => l.id) || [];
+      
+      let totalPaid = 0;
+      if (activeLoanIds.length > 0) {
+        const { data: activePayments } = await supabase
+          .from('payments')
+          .select('amount')
+          .in('loan_id', activeLoanIds)
+          .eq('status', 'paid')
+          .eq('is_deleted', false);
+        
+        totalPaid = activePayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      }
 
-      const totalLoans = customers?.reduce((sum, c) => sum + Number(c.loan_amount), 0) || 0;
-      const totalPaid = paidPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const totalLoans = activeLoans?.reduce((sum, l) => sum + Number(l.loan_amount), 0) || 0;
       const pending = totalLoans - totalPaid;
 
       return [
@@ -415,18 +435,95 @@ export function useUpdatePayment() {
 
   return useMutation({
     mutationFn: async ({ id, ...payment }: Partial<Payment> & { id: string }) => {
-      // Round amount to avoid floating point precision issues
-      const updateData = {
-        ...payment,
-        ...(payment.amount !== undefined ? { amount: Math.round(Number(payment.amount) * 100) / 100 } : {}),
-      };
-
-      const { error } = await supabase
+      // 1. Fetch old payment for comparison
+      const { data: oldPayment, error: fetchError } = await supabase
         .from('payments')
-        .update(updateData)
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !oldPayment) throw new Error('Payment not found');
+
+      // Round amount
+      const newAmount = payment.amount !== undefined ? Math.round(Number(payment.amount) * 100) / 100 : Number(oldPayment.amount);
+      const newStatus = payment.status || oldPayment.status;
+
+      // 2. Handle Loan Update if linked to a loan
+      if (oldPayment.loan_id) {
+        const oldPaidAmt = oldPayment.status === 'paid' ? Number(oldPayment.amount) : 0;
+        const newPaidAmt = newStatus === 'paid' ? newAmount : 0;
+        const diff = newPaidAmt - oldPaidAmt;
+
+        if (diff !== 0) {
+          const { data: loan } = await supabase
+            .from('loans')
+            .select('outstanding_amount')
+            .eq('id', oldPayment.loan_id)
+            .single();
+
+          if (loan) {
+            const newOutstanding = Number(loan.outstanding_amount) - diff;
+            await supabase
+              .from('loans')
+              .update({
+                outstanding_amount: newOutstanding <= 0 ? 0 : newOutstanding,
+                status: newOutstanding <= 0 ? 'closed' : 'active'
+              })
+              .eq('id', oldPayment.loan_id);
+          }
+        }
+      }
+
+      // 3. Handle Fund Transaction Sync
+      if (oldPayment.status === 'paid' || newStatus === 'paid') {
+        if (newStatus === 'not_paid') {
+          // Soft delete fund transaction if changed to not_paid
+          await supabase
+            .from('fund_transactions')
+            .update({ is_deleted: true })
+            .eq('reference_id', id)
+            .eq('reference_table', 'payments');
+        } else {
+          // Upsert/Update fund transaction
+          const { data: existingTx } = await supabase
+            .from('fund_transactions')
+            .select('id')
+            .eq('reference_id', id)
+            .eq('reference_table', 'payments')
+            .maybeSingle();
+
+          if (existingTx) {
+            await supabase
+              .from('fund_transactions')
+              .update({ 
+                amount: newAmount, 
+                is_deleted: false,
+                description: `Loan repayment (Updated)` 
+              })
+              .eq('id', existingTx.id);
+          } else if (newStatus === 'paid') {
+            await supabase.from('fund_transactions').insert({
+              amount: newAmount,
+              type: 'loan_repayment',
+              reference_table: 'payments',
+              reference_id: id,
+              created_by: oldPayment.agent_id,
+              description: `Loan repayment`
+            });
+          }
+        }
+      }
+
+      // 4. Update the actual payment record
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({
+          ...payment,
+          amount: newAmount,
+        })
         .eq('id', id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
