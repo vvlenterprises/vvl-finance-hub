@@ -1,4 +1,4 @@
-import { useCustomers, useAllPayments } from '@/hooks/useData';
+import { useCustomers, useAllPayments, useAllActiveLoans } from '@/hooks/useData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,32 +15,35 @@ export function FollowUpsList({ date }: FollowUpsListProps) {
   const { user } = useAuth();
   const { data: customers, isLoading: customersLoading } = useCustomers();
   const { data: payments, isLoading: paymentsLoading } = useAllPayments();
-  
+  const { data: activeCustomerIds, isLoading: loansLoading } = useAllActiveLoans();
+
   const today = date || new Date().toISOString().split('T')[0];
-  
-  const isLoading = customersLoading || paymentsLoading;
+
+  const isLoading = customersLoading || paymentsLoading || loansLoading;
 
   // Get pending customers - those who haven't paid today
   const pendingCustomers = customers?.filter((customer) => {
-    if (customer.status !== 'active') return false;
-    
+    // A customer must have an active loan to be in the followup list
+    if (!activeCustomerIds?.has(customer.id)) return false;
+
     // Check if customer has a paid payment today
     const hasPaidToday = payments?.some(
       (p) => p.customer_id === customer.id && p.date === today && p.status === 'paid'
     );
-    
+
     return !hasPaidToday;
   }) || [];
 
   // Get promised customers - those who promised to pay today
   const promisedCustomers = customers?.filter((customer) => {
-    if (customer.status !== 'active') return false;
-    
+    // A customer must have an active loan to be in the followup list
+    if (!activeCustomerIds?.has(customer.id)) return false;
+
     // Check if customer has a promised payment for today
     const hasPromisedToday = payments?.some(
       (p) => p.customer_id === customer.id && p.promised_date === today
     );
-    
+
     return hasPromisedToday;
   }) || [];
 
@@ -79,9 +82,9 @@ export function FollowUpsList({ date }: FollowUpsListProps) {
               Promised Today ({promisedCustomers.length})
             </Badge>
           </div>
-          
+
           {promisedCustomers.map((customer) => (
-            <Card 
+            <Card
               key={`promised-${customer.id}`}
               className="border-warning/30 bg-warning/5 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => navigate(`/customers/${customer.id}`)}
@@ -135,13 +138,13 @@ export function FollowUpsList({ date }: FollowUpsListProps) {
               Pending Collection ({pendingCustomers.length})
             </Badge>
           </div>
-          
+
           {pendingCustomers.map((customer) => {
             const isAlsoPromised = promisedCustomers.some(p => p.id === customer.id);
             if (isAlsoPromised) return null; // Already shown in promised section
-            
+
             return (
-              <Card 
+              <Card
                 key={`pending-${customer.id}`}
                 className="border-border/50 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate(`/customers/${customer.id}`)}

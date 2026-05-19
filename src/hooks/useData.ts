@@ -181,6 +181,27 @@ export function useAllPayments() {
   });
 }
 
+export function useAllActiveLoans() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['all-active-loans', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('loans')
+        .select('customer_id')
+        .eq('status', 'active')
+        .eq('is_deleted', false);
+
+      if (error) throw error;
+
+      // Return a Set of customer IDs for fast lookup
+      return new Set(data?.map(loan => loan.customer_id) || []);
+    },
+    enabled: !!user,
+  });
+}
+
 export function useDashboardStats() {
   const { user } = useAuth();
 
