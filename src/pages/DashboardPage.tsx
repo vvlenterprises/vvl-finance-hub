@@ -130,7 +130,7 @@ export default function DashboardPage() {
           ) : (
             <>
               <SummaryCard
-                title="Total Customers"
+                title="Active Loan Holders"
                 value={stats?.totalCustomers || 0}
                 icon={Users}
                 variant="primary"

@@ -1,4 +1,4 @@
-import { useAllPayments, useCustomers } from '@/hooks/useData';
+import { useAllPayments, useCustomers, useAllActiveLoans } from '@/hooks/useData';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useTodaySummary() {
@@ -17,7 +17,9 @@ export function useTodaySummary() {
     .filter(p => p.status === 'not_paid')
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
-  const activeCustomers = customers?.filter(c => c.status === 'active') || [];
+  const { data: activeCustomerIds } = useAllActiveLoans();
+
+  const activeCustomers = customers?.filter(c => c.status === 'active' && activeCustomerIds?.has(c.id)) || [];
   const todayTarget = activeCustomers.reduce(
     (sum, c) => sum + Number(c.daily_amount),
     0

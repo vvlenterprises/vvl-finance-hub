@@ -211,10 +211,14 @@ export function useDashboardStats() {
       const today = new Date().toISOString().split('T')[0];
       const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-      // Get total customers
-      const { count: totalCustomers } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true });
+      // Get total active loan holders
+      const { data: activeLoansForCount } = await supabase
+        .from('loans')
+        .select('customer_id')
+        .eq('status', 'active')
+        .eq('is_deleted', false);
+      
+      const totalCustomers = new Set(activeLoansForCount?.map(l => l.customer_id) || []).size;
 
       // Get today's collection
       const { data: todayPayments } = await supabase

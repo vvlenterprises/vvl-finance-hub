@@ -57,8 +57,21 @@ export function useRoleBasedDashboardStats(fromDate?: string, toDate?: string) {
       const { data: customers } = await customersQuery;
 
       const customerIds = customers?.map((c) => c.id) || [];
-      // Total stored customers (excluding soft-deleted)
-      const totalCustomers = customers?.length || 0;
+      
+      // Get active loan holders count for totalCustomers display
+      let activeLoanHoldersQuery = supabase
+        .from('loans')
+        .select('customer_id')
+        .eq('status', 'active')
+        .eq('is_deleted', false);
+      
+      if (role !== 'admin' && customerIds.length > 0) {
+        activeLoanHoldersQuery = activeLoanHoldersQuery.in('customer_id', customerIds);
+      }
+
+      const { data: activeLoansData } = await activeLoanHoldersQuery;
+      // We only count unique customers who have an active loan
+      const totalCustomers = new Set(activeLoansData?.map(l => l.customer_id) || []).size;
 
       // If non-admin has no customers, return zeros
       if (role !== 'admin' && customerIds.length === 0) {
