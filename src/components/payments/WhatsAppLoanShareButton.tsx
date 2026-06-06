@@ -29,8 +29,7 @@ function generateLoanShareText(data: LoanShareData) {
 
   return [
     `   🏢 *VVL ENTERPRISES*`,
-    `   _Finance Management_`,
-    `   License: TN-02-0194510`,
+    `   _Finance Management_`, 
     ``,
     ``,
     `📋 *LOAN DETAILS*`,

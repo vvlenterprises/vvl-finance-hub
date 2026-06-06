@@ -72,6 +72,46 @@ export function useCustomers() {
   });
 }
 
+export function useCustomerDirectory() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['customer-directory', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customers')
+        .select(`
+          *,
+          loans (
+            id,
+            status,
+            is_deleted
+          )
+        `)
+        .order('name');
+
+      if (error) throw error;
+
+      // Fetch agent names for assigned_agent_ids
+      const agentIds = [...new Set((data || []).map(c => c.assigned_agent_id).filter(Boolean))];
+      let agentMap: Record<string, string> = {};
+      if (agentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', agentIds);
+        profiles?.forEach(p => { agentMap[p.user_id] = p.name; });
+      }
+
+      return (data || []).map(c => ({
+        ...c,
+        agent_name: c.assigned_agent_id ? (agentMap[c.assigned_agent_id] || 'Unknown') : undefined,
+      })) as (Customer & { loans?: { id: string; status: string; is_deleted: boolean | null }[] })[];
+    },
+    enabled: !!user,
+  });
+}
+
 export function useCustomerWithBalance(customerId: string | undefined) {
   const { user } = useAuth();
 
@@ -442,6 +482,40 @@ export function useCreatePayment() {
         .single();
 
       if (error) throw error;
+
+      // Handle Loan Update and Fund Transaction for new Paid payments
+      if (payment.status === 'paid') {
+        // 1. Update Loan Outstanding
+        if (payment.loan_id) {
+          const { data: loan } = await supabase
+            .from('loans')
+            .select('outstanding_amount')
+            .eq('id', payment.loan_id)
+            .single();
+
+          if (loan) {
+            const newOutstanding = Number(loan.outstanding_amount) - Number(payment.amount);
+            await supabase
+              .from('loans')
+              .update({
+                outstanding_amount: newOutstanding <= 0 ? 0 : newOutstanding,
+                status: newOutstanding <= 0 ? 'closed' : 'active'
+              })
+              .eq('id', payment.loan_id);
+          }
+        }
+
+        // 2. Insert Fund Transaction
+        await supabase.from('fund_transactions').insert({
+          amount: Number(payment.amount),
+          type: 'loan_repayment',
+          reference_table: 'payments',
+          reference_id: data.id,
+          created_by: user!.id,
+          description: `Loan repayment`
+        });
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {

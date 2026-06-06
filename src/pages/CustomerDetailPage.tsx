@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { WhatsAppLoanShareButton } from '@/components/payments/WhatsAppLoanShareButton';
+import { WhatsAppNocShareButton } from '@/components/payments/WhatsAppNocShareButton';
 import { LoanCardRedesigned } from '@/components/LoanCardRedesigned';
 
 export default function CustomerDetailPage() {
@@ -228,21 +229,33 @@ export default function CustomerDetailPage() {
     const outstandingAmt = Number(loan.outstanding_amount);
 
     const renderWhatsApp = (loan: any) => (
-      <WhatsAppLoanShareButton data={{
-        customerName: customer.name,
-        mobile: customer.mobile,
-        loanDisplayId: loan.loan_display_id || `Loan #${loan.loan_number}`,
-        loanAmount: Number(loan.loan_amount),
-        interestRate: Number(loan.interest_rate) || 0,
-        processingFeeRate: Number(loan.processing_fee_rate) || 0,
-        otherDeductions: Number(loan.other_deductions) || 0,
-        includeChargesInOutstanding: loan.include_charges_in_outstanding || false,
-        disbursalAmount: Number(loan.disbursal_amount),
-        outstandingAmount: outstandingAmt,
-        dailyAmount: Number(loan.daily_amount),
-        startDate: loan.start_date,
-        endDate: loan.end_date,
-      }} />
+      <div className="flex flex-col gap-2">
+        <WhatsAppLoanShareButton data={{
+          customerName: customer.name,
+          mobile: customer.mobile,
+          loanDisplayId: loan.loan_display_id || `Loan #${loan.loan_number}`,
+          loanAmount: Number(loan.loan_amount),
+          interestRate: Number(loan.interest_rate) || 0,
+          processingFeeRate: Number(loan.processing_fee_rate) || 0,
+          otherDeductions: Number(loan.other_deductions) || 0,
+          includeChargesInOutstanding: loan.include_charges_in_outstanding || false,
+          disbursalAmount: Number(loan.disbursal_amount),
+          outstandingAmount: outstandingAmt,
+          dailyAmount: Number(loan.daily_amount),
+          startDate: loan.start_date,
+          endDate: loan.end_date,
+        }} />
+        {loan.status === 'closed' && (
+          <WhatsAppNocShareButton data={{
+            customerName: customer.name,
+            mobile: customer.mobile,
+            loanDisplayId: loan.loan_display_id || `Loan #${loan.loan_number}`,
+            loanAmount: Number(loan.loan_amount),
+            startDate: loan.start_date,
+            endDate: loan.end_date,
+          }} />
+        )}
+      </div>
     );
 
     const renderCloseLoanDialog = (loan: any, outstanding: number) => {

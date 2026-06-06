@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { CustomerCard } from '@/components/CustomerCard';
-import { useCustomers } from '@/hooks/useData';
+import { useCustomerDirectory } from '@/hooks/useData';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissionChecker } from '@/hooks/usePermissions';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter, Users, CheckCircle, UserMinus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,8 +19,8 @@ import {
 
 export default function CustomersPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const { data: customers, isLoading } = useCustomers();
+  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const { data: customers, isLoading } = useCustomerDirectory();
   const { isAdmin, isManager } = useAuth();
   const checkPermission = usePermissionChecker();
   
@@ -32,15 +32,156 @@ export default function CustomersPage() {
       customer.mobile.includes(search) ||
       customer.area.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === 'all' || customer.status === statusFilter;
+    const matchesStatus = (() => {
+      if (statusFilter === 'active') {
+        return customer.is_deleted === false;
+      }
+      if (statusFilter === 'inactive') {
+        return customer.is_deleted === true;
+      }
+      if (statusFilter === 'closed') {
+        if (customer.is_deleted === true) return false;
+        
+        // Filter out deleted loans first
+        const validLoans = customer.loans?.filter(l => l.is_deleted === false) || [];
+        
+        // Return true if they have at least one valid loan and ALL of them are closed
+        return validLoans.length > 0 && validLoans.every(l => l.status === 'closed');
+      }
+      return true;
+    })();
 
     return matchesSearch && matchesStatus;
+  });
+
+  const summaryCounts = {
+    active: 0,
+    inactive: 0,
+    closed: 0,
+  };
+
+  customers?.forEach(customer => {
+    if (customer.is_deleted === true) {
+      summaryCounts.inactive++;
+    } else {
+      summaryCounts.active++;
+      const validLoans = customer.loans?.filter(l => l.is_deleted === false) || [];
+      if (validLoans.length > 0 && validLoans.every(l => l.status === 'closed')) {
+        summaryCounts.closed++;
+      }
+    }
   });
 
   return (
     <MainLayout title="Customers">
       <div className="px-4 py-4 space-y-4">
+        {/* Summary Cards */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="summary-card summary-card-primary">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white/80">Active</p>
+                <p className="text-2xl font-bold mt-1 text-white">{summaryCounts.active}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/20 text-white">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card summary-card-success">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white/80">Closed</p>
+                <p className="text-2xl font-bold mt-1 text-white">{summaryCounts.closed}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/20 text-white">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card bg-muted/30 border border-muted">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">InActive</p>
+                <p className="text-2xl font-bold mt-1 text-foreground">{summaryCounts.inactive}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-background text-muted-foreground border">
+                <UserMinus className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+        </div> */}
+
+<div className="grid grid-cols-2 gap-3">
+  
+    {/* Total */}
+  <div className="rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 p-4 text-white shadow-md">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs opacity-90">Total Customers</p>
+        <h3 className="text-2xl font-bold mt-1">
+          {summaryCounts.active +
+           summaryCounts.closed +
+           summaryCounts.inactive}
+        </h3>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <Users className="w-5 h-5" />
+      </div>
+    </div>
+  </div>
+
+  {/* Active */}
+  <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white shadow-md">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs opacity-90">Active Loan Holders</p>
+        <h3 className="text-2xl font-bold mt-1">
+          {summaryCounts.active - summaryCounts.closed}
+        </h3>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <Users className="w-5 h-5" />
+      </div>
+    </div>
+  </div>
+
+  {/* Closed */}
+  <div className="rounded-2xl bg-gradient-to-r from-green-500 to-green-600 p-4 text-white shadow-md">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs opacity-90">Closed Loan Holders</p>
+        <h3 className="text-2xl font-bold mt-1">
+          {summaryCounts.closed}
+        </h3>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <CheckCircle className="w-5 h-5" />
+      </div>
+    </div>
+  </div>
+
+  {/* Inactive */}
+  <div className="rounded-2xl bg-gradient-to-r from-slate-500 to-slate-700 p-4 text-white shadow-md">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs opacity-90">Inactive Customers</p>
+        <h3 className="text-2xl font-bold mt-1">
+          {summaryCounts.inactive}
+        </h3>
+      </div>
+      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <UserMinus className="w-5 h-5" />
+      </div>
+    </div>
+  </div>
+
+
+
+</div>
+
         {/* Search and Filter */}
         <div className="flex gap-3">
           <div className="relative flex-1">
@@ -58,10 +199,9 @@ export default function CustomersPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
               <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">InActive</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
-              <SelectItem value="defaulted">Defaulted</SelectItem>
             </SelectContent>
           </Select>
         </div>

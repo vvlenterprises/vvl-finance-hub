@@ -232,7 +232,7 @@ export function LoanCardRedesigned({
 
       {/* Action Buttons */}
       <div className="px-4 pb-4">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-2">
           <Button
             className="w-full rounded-xl h-11 font-semibold text-sm"
             style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
