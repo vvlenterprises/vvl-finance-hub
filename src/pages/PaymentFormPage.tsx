@@ -93,7 +93,7 @@ export default function PaymentFormPage() {
   const selectedCustomer = customers?.find((c) => c.id === formData.customer_id);
 
   // Fetch active loan for the selected customer
-  const { data: activeLoan } = useQuery({
+  const { data: activeLoan, isLoading: isLoadingActiveLoan } = useQuery({
     queryKey: ['active-loan', formData.customer_id],
     queryFn: async () => {
       if (!formData.customer_id) return null;
@@ -103,8 +103,13 @@ export default function PaymentFormPage() {
         .eq('customer_id', formData.customer_id)
         .eq('status', 'active')
         .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching active loan:", error);
+        throw error;
+      }
       return data;
     },
     enabled: !!formData.customer_id && !!user,
@@ -323,7 +328,12 @@ export default function PaymentFormPage() {
             </div>
 
             {/* Show active loan info */}
-            {selectedCustomer && activeLoan && (
+            {selectedCustomer && isLoadingActiveLoan && (
+              <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Fetching active loan...
+              </div>
+            )}
+            {selectedCustomer && !isLoadingActiveLoan && activeLoan && (
               <div className="bg-muted/50 rounded-lg p-3 text-sm">
                 <p className="text-muted-foreground">
                   Active Loan #{activeLoan.loan_number} • ₹{Number(activeLoan.loan_amount).toLocaleString('en-IN')}
@@ -333,7 +343,7 @@ export default function PaymentFormPage() {
                 </p>
               </div>
             )}
-            {selectedCustomer && !activeLoan && (
+            {selectedCustomer && !isLoadingActiveLoan && !activeLoan && (
               <div className="bg-destructive/10 rounded-lg p-3 text-sm text-destructive">
                 No active loan found for this customer.
               </div>
