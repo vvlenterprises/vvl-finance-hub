@@ -19,7 +19,16 @@ export function KycFileUpload({ label, fileUrl, customerId, fieldName, onFileUpl
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  const displayUrl = uploadedUrl || fileUrl;
+  const getValidUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.includes('/object/sign/')) {
+      const urlWithoutToken = url.split('?')[0];
+      return urlWithoutToken.replace('/object/sign/', '/object/public/');
+    }
+    return url;
+  };
+
+  const displayUrl = uploadedUrl || getValidUrl(fileUrl);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,12 +57,11 @@ export function KycFileUpload({ label, fileUrl, customerId, fieldName, onFileUpl
 
       if (uploadError) throw uploadError;
 
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('customer-kyc')
-        .createSignedUrl(filePath, 60 * 60); // 1 hour expiry
+        .getPublicUrl(filePath);
 
-      if (signedUrlError) throw signedUrlError;
-      const url = signedUrlData.signedUrl;
+      const url = publicUrlData.publicUrl;
       setUploadedUrl(url);
       onFileUploaded?.(url);
       toast({ title: 'Uploaded', description: `${label} file uploaded successfully` });

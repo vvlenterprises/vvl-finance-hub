@@ -213,6 +213,16 @@ export default function CustomerDetailPage() {
   const hasActiveLoan = !!activeLoan;
   const assignedLabel = customer.assigned_agent_id === user?.id ? 'Self' : (agentProfile?.name || 'Admin');
 
+  // Helper to convert old expired signed URLs to permanent public URLs on the fly
+  const getValidUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.includes('/object/sign/')) {
+      const urlWithoutToken = url.split('?')[0];
+      return urlWithoutToken.replace('/object/sign/', '/object/public/');
+    }
+    return url;
+  };
+
   const getLoanChargesBreakdown = (loan: any) => {
     const loanAmt = Number(loan.loan_amount);
     const interestRate = Number(loan.interest_rate) || 0;
@@ -341,7 +351,7 @@ export default function CustomerDetailPage() {
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary to-primary/70 flex-shrink-0">
             {(customer as any).photo_url ? (
-              <img src={(customer as any).photo_url} alt={customer.name} className="w-full h-full object-cover" />
+              <img src={getValidUrl((customer as any).photo_url)} alt={customer.name} className="w-full h-full object-cover" />
             ) : (
               <span className="text-lg font-bold text-primary-foreground">{customer.name.charAt(0).toUpperCase()}</span>
             )}
@@ -456,13 +466,13 @@ export default function CustomerDetailPage() {
               {/* KYC File links */}
               <div className="mt-4 space-y-2">
                 {(customer as any).pan_file_url && (
-                  <a href={(customer as any).pan_file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View PAN Document</a>
+                  <a href={getValidUrl((customer as any).pan_file_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View PAN Document</a>
                 )}
                 {(customer as any).aadhaar_file_url && (
-                  <a href={(customer as any).aadhaar_file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View Aadhaar Document</a>
+                  <a href={getValidUrl((customer as any).aadhaar_file_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View Aadhaar Document</a>
                 )}
                 {(customer as any).other_file_url && (
-                  <a href={(customer as any).other_file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View {(customer as any).other_file_name || 'Other Document'}</a>
+                  <a href={getValidUrl((customer as any).other_file_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">📎 View {(customer as any).other_file_name || 'Other Document'}</a>
                 )}
               </div>
             </div>

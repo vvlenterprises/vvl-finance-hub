@@ -33,6 +33,7 @@ export default function CustomersPage() {
       customer.area.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = (() => {
+      if (statusFilter === 'all') return true;
       if (statusFilter === 'active') {
         return customer.is_deleted === false;
       }
@@ -116,8 +117,10 @@ export default function CustomersPage() {
 
 <div className="grid grid-cols-2 gap-3">
   
-    {/* Total */}
-  <div className="rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 p-4 text-white shadow-md">
+  <div 
+    onClick={() => setStatusFilter('all')}
+    className={`rounded-2xl bg-gradient-to-r from-purple-500 to-violet-600 p-4 text-white shadow-md cursor-pointer transition-all active:scale-95 hover:shadow-lg ${statusFilter === 'all' ? 'ring-2 ring-offset-2 ring-offset-background ring-purple-500' : ''}`}
+  >
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs opacity-90">Total Customers</p>
@@ -134,7 +137,10 @@ export default function CustomersPage() {
   </div>
 
   {/* Active */}
-  <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white shadow-md">
+  <div 
+    onClick={() => setStatusFilter('active')}
+    className={`rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white shadow-md cursor-pointer transition-all active:scale-95 hover:shadow-lg ${statusFilter === 'active' ? 'ring-2 ring-offset-2 ring-offset-background ring-blue-500' : ''}`}
+  >
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs opacity-90">Active Loan Holders</p>
@@ -149,7 +155,10 @@ export default function CustomersPage() {
   </div>
 
   {/* Closed */}
-  <div className="rounded-2xl bg-gradient-to-r from-green-500 to-green-600 p-4 text-white shadow-md">
+  <div 
+    onClick={() => setStatusFilter('closed')}
+    className={`rounded-2xl bg-gradient-to-r from-green-500 to-green-600 p-4 text-white shadow-md cursor-pointer transition-all active:scale-95 hover:shadow-lg ${statusFilter === 'closed' ? 'ring-2 ring-offset-2 ring-offset-background ring-green-500' : ''}`}
+  >
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs opacity-90">Closed Loan Holders</p>
@@ -164,7 +173,10 @@ export default function CustomersPage() {
   </div>
 
   {/* Inactive */}
-  <div className="rounded-2xl bg-gradient-to-r from-slate-500 to-slate-700 p-4 text-white shadow-md">
+  <div 
+    onClick={() => setStatusFilter('inactive')}
+    className={`rounded-2xl bg-gradient-to-r from-slate-500 to-slate-700 p-4 text-white shadow-md cursor-pointer transition-all active:scale-95 hover:shadow-lg ${statusFilter === 'inactive' ? 'ring-2 ring-offset-2 ring-offset-background ring-slate-500' : ''}`}
+  >
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs opacity-90">Inactive Customers</p>
@@ -199,6 +211,7 @@ export default function CustomersPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">InActive</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>

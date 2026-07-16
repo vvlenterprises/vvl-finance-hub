@@ -56,12 +56,11 @@ export function CustomerPhotoUpload({
 
       if (uploadError) throw uploadError;
 
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('customer-kyc')
-        .createSignedUrl(filePath, 60 * 60); // 1 hour expiry
+        .getPublicUrl(filePath);
 
-      if (signedUrlError) throw signedUrlError;
-      const url = signedUrlData.signedUrl;
+      const url = publicUrlData.publicUrl;
       onPhotoUploaded?.(url);
       toast({ title: 'Success', description: 'Photo uploaded' });
     } catch (_error: unknown) {
@@ -72,7 +71,16 @@ export function CustomerPhotoUpload({
     }
   };
 
-  const displayUrl = previewUrl || photoUrl;
+  const getValidUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.includes('/object/sign/')) {
+      const urlWithoutToken = url.split('?')[0];
+      return urlWithoutToken.replace('/object/sign/', '/object/public/');
+    }
+    return url;
+  };
+
+  const displayUrl = previewUrl || getValidUrl(photoUrl);
 
   return (
     <div className="relative inline-block">
