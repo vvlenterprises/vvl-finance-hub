@@ -22,7 +22,7 @@ export function AppLogo({ size = 'md', className }: AppLogoProps) {
   return (
     <img
       src={logo}
-      alt="VVL Enterprises"
+      alt="VLS Enterprises"
       className={cn('object-contain rounded-xl', sizeMap[size], className)}
     />
   );

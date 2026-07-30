@@ -32,7 +32,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
                 <h1 className="text-lg font-bold text-foreground">
                   {title || 'CRM'}
                 </h1>
-                <p className="text-xs text-muted-foreground">VVL Enterprises</p>
+                <p className="text-xs text-muted-foreground">VLS Enterprises</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

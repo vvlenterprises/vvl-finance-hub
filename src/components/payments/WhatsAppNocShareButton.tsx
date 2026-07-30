@@ -66,7 +66,7 @@ function generateNocPdf(data: NocShareData) {
 <body>
 <div class="doc">
   <div class="header">
-    <h1>VVL ENTERPRISES</h1>
+    <h1>VLS ENTERPRISES</h1>
     <div class="sub">Finance Management</div>
     <div class="license">License No: TN-02-0194510</div>
     <div class="badge">NO OBJECTION CERTIFICATE</div>
@@ -79,7 +79,7 @@ function generateNocPdf(data: NocShareData) {
     <div class="greeting">To Whomsoever It May Concern,</div>
     
     <div class="content">
-      This is to certify that <b>Mr/Ms. ${data.customerName}</b> had availed a financial loan of <b>₹${data.loanAmount.toLocaleString('en-IN')}</b> (Rupees ${numberToWords(data.loanAmount)} Only) from VVL Enterprises on ${startFormatted}.
+      This is to certify that <b>Mr/Ms. ${data.customerName}</b> had availed a financial loan of <b>₹${data.loanAmount.toLocaleString('en-IN')}</b> (Rupees ${numberToWords(data.loanAmount)} Only) from VLS Enterprises on ${startFormatted}.
       <br><br>
       We confirm that the aforementioned loan account has been <b>fully settled and closed</b> on <b>${endFormatted}</b>. 
     </div>
@@ -108,12 +108,12 @@ function generateNocPdf(data: NocShareData) {
       <div class="right">
         <div class="stamp">CLOSED</div>
         <div class="name">Authorized Signatory</div>
-        <div class="title">VVL Enterprises</div>
+        <div class="title">VLS Enterprises</div>
       </div>
     </div>
   </div>
   <div class="footer">
-    <p>This is a system-generated No Objection Certificate from VVL Enterprises.</p>
+    <p>This is a system-generated No Objection Certificate from VLS Enterprises.</p>
   </div>
 </div>
 <button class="print-btn no-print" onclick="window.print()">📄 Save as PDF / Print</button>

@@ -28,7 +28,7 @@ function generateLoanShareText(data: LoanShareData) {
   const endFormatted = data.endDate ? new Date(data.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
 
   return [
-    `   🏢 *VVL ENTERPRISES*`,
+    `   🏢 *VLS ENTERPRISES*`,
     `   _Finance Management_`, 
     ``,
     ``,
@@ -58,7 +58,7 @@ function generateLoanShareText(data: LoanShareData) {
     `📅 To: ${endFormatted}`,
     ``,
     ``,
-    `  VVL Enterprises `,
+    `  VLS Enterprises `,
     ``,
   ].filter(Boolean).join('\n');
 }
@@ -122,7 +122,7 @@ function generateLoanPdf(data: LoanShareData) {
 <body>
 <div class="doc">
   <div class="header">
-    <h1>VVL ENTERPRISES</h1>
+    <h1>VLS ENTERPRISES</h1>
     <div class="sub">Finance Management</div>
     <div class="license">License No: TN-02-0194510</div>
     <div class="badge">LOAN AGREEMENT</div>
@@ -176,8 +176,8 @@ function generateLoanPdf(data: LoanShareData) {
     </div>
   </div>
   <div class="footer">
-    <p>This is a system-generated loan summary from VVL Enterprises.</p>
-    <p class="note">© ${new Date().getFullYear()} VVL Enterprises. All rights reserved.</p>
+    <p>This is a system-generated loan summary from VLS Enterprises.</p>
+    <p class="note">© ${new Date().getFullYear()} VLS Enterprises. All rights reserved.</p>
   </div>
 </div>
 <button class="print-btn no-print" onclick="window.print()">📄 Save as PDF / Print</button>

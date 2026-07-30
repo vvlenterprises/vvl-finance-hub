@@ -121,11 +121,11 @@ function DetailsTab() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">App Name</span>
-            <span className="font-medium text-foreground">VVL Finance CRM</span>
+            <span className="font-medium text-foreground">VSL Finance CRM</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Company</span>
-            <span className="font-medium text-foreground">VVL Enterprises</span>
+            <span className="font-medium text-foreground">VLS Enterprises</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">License</span>
@@ -167,7 +167,7 @@ function AboutTab() {
         <div className="w-20 h-20 mx-auto rounded-2xl overflow-hidden shadow-lg shadow-primary/30 mb-4">
           <AppLogo size="lg" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground">VVL Enterprises</h1>
+        <h1 className="text-2xl font-bold text-foreground">VLS Enterprises</h1>
         <p className="text-muted-foreground text-sm mt-1">Finance Management System</p>
         <p className="text-xs text-muted-foreground/70 mt-1">Version 2.0 • Phase I</p>
       </div>
@@ -244,7 +244,7 @@ function AboutTab() {
           Made with <Heart className="w-4 h-4 text-destructive fill-destructive" /> in India
         </p>
         <p className="text-xs text-muted-foreground/60 mt-2">
-          © {new Date().getFullYear()} VVL Enterprises. All rights reserved.
+          © {new Date().getFullYear()} VLS Enterprises. All rights reserved.
         </p>
       </div>
     </div>

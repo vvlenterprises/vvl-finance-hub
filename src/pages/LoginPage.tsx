@@ -86,7 +86,7 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-center mb-1">
-            VVL Enterprises
+            VLS Enterprises
           </h1>
           <p className="text-sm text-center text-muted-foreground mb-6">
             Finance Management System

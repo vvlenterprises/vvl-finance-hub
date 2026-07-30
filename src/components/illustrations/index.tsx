@@ -1,4 +1,4 @@
-// SVG Illustrations for VVL Enterprises Finance App
+// SVG Illustrations for VLS Enterprises Finance App
 
 // Empty state for customers
 export function EmptyCustomersIllustration() {

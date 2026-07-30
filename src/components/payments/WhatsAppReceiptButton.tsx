@@ -22,7 +22,7 @@ function generateReceiptText(payment: Payment, agentName?: string) {
 
   return [
     `━━━━━━━━━━━━━━━━━━━━`,
-    `   🏢 *VVL ENTERPRISES*`,
+    `   🏢 *VLS ENTERPRISES*`,
     `   _Finance Management_`,
     `   License: TN-02-0194510`,
     `━━━━━━━━━━━━━━━━━━━━`,
@@ -48,11 +48,11 @@ function generateReceiptText(payment: Payment, agentName?: string) {
     payment.remarks ? `📝 Remarks: ${payment.remarks}` : '',
     ``,
     `━━━ Collection Agent ━━━`,
-    `🧑‍💼 Agent: ${agentName || 'VVL Agent'}`,
+    `🧑‍💼 Agent: ${agentName || 'VLS Agent'}`,
     ``,
     `━━━━━━━━━━━━━━━━━━━━`,
     `  _Thank you for your payment!_`,
-    `  _VVL Enterprises_`,
+    `  _VLS Enterprises_`,
     `━━━━━━━━━━━━━━━━━━━━`,
   ].filter(Boolean).join('\n');
 }
@@ -105,7 +105,7 @@ function generatePdfReceipt(payment: Payment, agentName?: string) {
 <body>
 <div class="receipt">
   <div class="header">
-    <h1>VVL ENTERPRISES</h1>
+    <h1>VLS ENTERPRISES</h1>
     <p>Finance Management</p>
     <p class="license">License: TN-02-0194510</p>
     <div class="badge">PAYMENT RECEIPT</div>
@@ -147,12 +147,12 @@ function generatePdfReceipt(payment: Payment, agentName?: string) {
 
     <div class="section">
       <div class="section-title">Collection Agent</div>
-      <div class="row"><span class="label">Agent</span><span class="value">${agentName || 'VVL Agent'}</span></div>
+      <div class="row"><span class="label">Agent</span><span class="value">${agentName || 'VLS Agent'}</span></div>
     </div>
   </div>
   <div class="footer">
     <p>Thank you for your payment!</p>
-    <p style="margin-top:4px">© ${new Date().getFullYear()} VVL Enterprises. All rights reserved.</p>
+    <p style="margin-top:4px">© ${new Date().getFullYear()} VLS Enterprises. All rights reserved.</p>
   </div>
 </div>
 </body>

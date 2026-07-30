@@ -190,54 +190,7 @@ export default function PaymentFormPage() {
         promised_date: formData.promised_date || null,
       });
 
-      //Newly added for Fund Balance Update
-
-       if (formData.status === 'paid') {
-          const { error: fundError } = await supabase
-            .from('fund_transactions')
-            .insert({
-              amount: Math.round(parseFloat(formData.amount) * 100) / 100,
-              type: 'loan_repayment',
-              description: `Loan repayment from ${selectedCustomer?.name}`,
-              reference_table: 'payments',
-              reference_id: result?.id || null, // payment id
-              created_by: user!.id,
-            });
-      
-          if (fundError) {
-            toast({
-              variant: 'destructive',
-              title: 'Warning',
-              description: 'Payment saved but fund transaction failed.',
-            });
-          }
-      }
-
-
-          // 🔥 Update Loan Outstanding
-    if (formData.status === 'paid' && activeLoan) {
-      const paidAmount = Math.round(parseFloat(formData.amount) * 100) / 100;
-      const currentOutstanding = Number(activeLoan.outstanding_amount || 0);
-    
-      const newOutstanding = currentOutstanding - paidAmount;
-    
-      const { error: loanUpdateError } = await supabase
-        .from('loans')
-        .update({
-          outstanding_amount: newOutstanding <= 0 ? 0 : newOutstanding,
-          status: newOutstanding <= 0 ? 'closed' : 'active'
-        })
-        .eq('id', activeLoan.id);
-    
-      if (loanUpdateError) {
-        toast({
-          variant: 'destructive',
-          title: 'Loan Update Failed',
-          description: 'Payment saved but loan outstanding not updated.',
-        });
-      }
-    }
-      // Newly added ends.
+      // Removed duplicate logic since it's already handled in useCreatePayment hook.
       
       toast({
         title: 'Payment Saved',

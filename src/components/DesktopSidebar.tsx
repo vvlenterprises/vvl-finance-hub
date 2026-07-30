@@ -23,8 +23,8 @@ export function DesktopSidebar() {
       <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
         <AppLogo size="sm" />
         <div>
-          <h1 className="text-lg font-bold text-foreground">VVL CRM</h1>
-          <p className="text-xs text-muted-foreground">VVL Enterprises</p>
+          <h1 className="text-lg font-bold text-foreground">VSL CRM</h1>
+          <p className="text-xs text-muted-foreground">VLS Enterprises</p>
         </div>
       </div>
 
