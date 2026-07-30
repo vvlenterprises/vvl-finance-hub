@@ -121,7 +121,7 @@ function DetailsTab() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">App Name</span>
-            <span className="font-medium text-foreground">VSL Finance CRM</span>
+            <span className="font-medium text-foreground">VLS Finance CRM</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Company</span>
