@@ -1,7 +1,7 @@
 {
-  "name": "VVL Enterprises CRM",
-  "short_name": "VVL CRM",
-  "description": "Finance CRM for VVL Enterprises - Manage customers and payments",
+  "name": "VLS Enterprises CRM",
+  "short_name": "VSL CRM",
+  "description": "Finance CRM for VLS Enterprises - Manage customers and payments",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
@@ -10,7 +10,7 @@
   "categories": ["finance", "business", "productivity"],
   "icons": [
   {
-    "src": "/vvl-logo-512.png",
+    "src": "/vls-logo-512.png",
     "sizes": "512x512",
     "type": "image/png"
   }
