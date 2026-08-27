@@ -320,7 +320,7 @@ export default function CustomerDetailPage() {
       <div className="px-4 py-4 space-y-4">
         {/* Back Button & Actions */}
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate('/customers')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-5 h-5" /><span>Back</span>
           </button>
           <div className="flex gap-2">
@@ -386,22 +386,63 @@ export default function CustomerDetailPage() {
               </div>
 
               {/* Active Loan Summary */}
-              {activeLoan && (
-                <div className="grid grid-cols-3 gap-3 mt-3">
-                  <div className="text-center p-3 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Outstanding</p>
-                    <p className="text-lg font-bold text-foreground">₹{(Number(activeLoan.outstanding_amount) || Number(customer.loan_amount)).toLocaleString('en-IN')}</p>
+              {activeLoan && (() => {
+                const loanAmt = Number(activeLoan.loan_amount) || 0;
+                const outstandingAmt = Number(activeLoan.outstanding_amount) || 0;
+                const paidAmt = Math.max(0, loanAmt - outstandingAmt);
+
+                // Overdue Days calculation
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let overdueDays = 0;
+                if (outstandingAmt > 0) {
+                  if (activeLoan.end_date) {
+                    const [y, m, d] = activeLoan.end_date.split('T')[0].split('-').map(Number);
+                    const endDate = new Date(y, m - 1, d);
+                    endDate.setHours(0, 0, 0, 0);
+                    if (today.getTime() > endDate.getTime()) {
+                      overdueDays = Math.floor((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+                    }
+                  } else if (activeLoan.start_date) {
+                    const [y, m, d] = activeLoan.start_date.split('T')[0].split('-').map(Number);
+                    const startDate = new Date(y, m - 1, d);
+                    startDate.setHours(0, 0, 0, 0);
+                    const elapsedDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (elapsedDays > 100) {
+                      overdueDays = elapsedDays - 100;
+                    }
+                  }
+                }
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3">
+                    <div className="text-center p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Total Loan</p>
+                      <p className="text-lg font-bold text-foreground">₹{loanAmt.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-success/10">
+                      <p className="text-xs text-muted-foreground">Total Paid</p>
+                      <p className="text-lg font-bold text-success">₹{paidAmt.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-warning/10">
+                      <p className="text-xs text-muted-foreground">Balance</p>
+                      <p className="text-lg font-bold text-warning">₹{outstandingAmt.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className={cn(
+                      "text-center p-3 rounded-xl",
+                      overdueDays > 0 ? "bg-rose-500/10 border border-rose-500/30" : "bg-muted/40"
+                    )}>
+                      <p className="text-xs text-muted-foreground">Overdue Days</p>
+                      <p className={cn(
+                        "text-lg font-bold",
+                        overdueDays > 0 ? "text-rose-500" : "text-muted-foreground"
+                      )}>
+                        {overdueDays > 0 ? `${overdueDays} Days` : '0 Days'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-success/10">
-                    <p className="text-xs text-muted-foreground">Total Paid</p>
-                    <p className="text-lg font-bold text-success">₹{customer.total_paid.toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-warning/10">
-                    <p className="text-xs text-muted-foreground">Balance</p>
-                    <p className="text-lg font-bold text-warning">₹{customer.balance.toLocaleString('en-IN')}</p>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Quick Add Payment */}
               {hasActiveLoan && (

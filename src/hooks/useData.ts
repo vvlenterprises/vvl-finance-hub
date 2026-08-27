@@ -85,7 +85,12 @@ export function useCustomerDirectory() {
           loans (
             id,
             status,
-            is_deleted
+            is_deleted,
+            start_date,
+            end_date,
+            loan_amount,
+            outstanding_amount,
+            created_at
           )
         `)
         .order('name');
@@ -106,7 +111,18 @@ export function useCustomerDirectory() {
       return (data || []).map(c => ({
         ...c,
         agent_name: c.assigned_agent_id ? (agentMap[c.assigned_agent_id] || 'Unknown') : undefined,
-      })) as (Customer & { loans?: { id: string; status: string; is_deleted: boolean | null }[] })[];
+      })) as (Customer & {
+        loans?: {
+          id: string;
+          status: string;
+          is_deleted: boolean | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          loan_amount?: number | null;
+          outstanding_amount?: number | null;
+          created_at?: string | null;
+        }[];
+      })[];
     },
     enabled: !!user,
   });
